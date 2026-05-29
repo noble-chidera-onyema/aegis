@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Environment variables (NEVER commit secrets)
+.env
+.env.local
+*.env.bak
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Vector store (regenerated locally)
+chroma_db/
+vector_store/
+*.faiss
+
+# Logs
+*.log
+logs/
+
+# Test caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Raw, unsorted screenshots (only curated ones go in docs/build_journey/)
+**/raw_screenshots/

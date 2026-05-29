@@ -1,0 +1,5 @@
+# Week 1: only what's needed to run the Hello World page.
+# Week 2 adds llama-index, chromadb, groq, sentence-transformers.
+
+streamlit==1.40.2
+python-dotenv==1.0.1
