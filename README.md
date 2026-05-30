@@ -13,6 +13,7 @@ Behind the scenes: a working retrieval pipeline. The EU AI Act (144 pages) is sp
 In the UI: still a Streamlit "Hello World" page. The user-facing features come next. Grounded Q&A is Week 3. Risk classification is Week 4. Obligations report is Week 5.
 
 Known limits at this stage. pypdf introduces letter-spacing artefacts on the CELEX-format Act ("high-r isk", "Ar ticle"). Top-3 similarity scores currently sit between 0.36 and 0.53. The Week 8 evaluation harness will measure these properly against a hand-labelled set, and the upgrade path (better PDF extraction, larger embedding model, or hybrid search with BM25) gets decided then based on measured numbers.
+
 ## How it will work
 
 The Act, Annex III, the Irish General Scheme of the AI Regulation Bill, and the GPAI Code of Practice are chunked and embedded into a local Chroma vector store. A retrieval layer pulls the most relevant clauses for each query. A Groq-hosted Llama model takes the user's system description plus the retrieved clauses and returns a structured classification with citations. A separate evaluation harness scores the classifier against a hand-labelled set so the accuracy claim in the README is a real number, not a marketing one.
@@ -32,3 +33,7 @@ https://www.linkedin.com/in/noble-chidera-onyema-1a88b53ab/
 ## Licence
 
 All Rights Reserved. See LICENSE.
+
+## Build journey
+
+Week-by-week history of the project, with screenshots: see [docs/BUILD_JOURNEY.md](./docs/BUILD_JOURNEY.md).
