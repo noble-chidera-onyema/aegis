@@ -1,5 +1,14 @@
-# Week 1: only what's needed to run the Hello World page.
-# Week 2 adds llama-index, chromadb, groq, sentence-transformers.
-
+# Week 1: Streamlit foundation.
 streamlit==1.40.2
 python-dotenv==1.0.1
+
+# Week 2: Retrieval pipeline.
+# llama-index-core is the RAG framework. The two integrations connect it to
+# Chroma (the vector database) and Hugging Face (the embedding model library).
+# pypdf reads the PDF source documents directly.
+# chromadb and sentence-transformers get pulled in transitively as dependencies
+# of the integration packages above, so we don't pin them here.
+llama-index-core==0.14.22
+llama-index-vector-stores-chroma==0.5.5
+llama-index-embeddings-huggingface==0.6.1
+pypdf==5.1.0
