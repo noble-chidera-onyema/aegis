@@ -40,6 +40,36 @@ The screenshot shows the project file tree with `grounded_qa.py` and `test_quest
 
 Known limitations carrying forward. pypdf still produces letter-spacing artefacts in the retrieved text ("high-r isk", "Ar ticle"); the model is robust to this in its outputs but the chunks remain noisy. Top-5 retrieval is the current setting; Week 8 will test 3, 5, and 10 against a hand-labelled set. The Article 5 partial-grounding case shows the model occasionally fills gaps with general knowledge of the Act; citation accuracy testing in Week 8 will quantify how often this happens. All similarity scores still sit in the 0.35 to 0.50 band.
 
+## Week 4 (1 June 2026, one day after Week 3, after a rest day)
+
+Built the risk classifier. The module at `src/aegis/classify.py` takes a plain-language description of an AI system and returns a structured `Classification` object with five fields: `tier` (one of prohibited, high-risk, limited-risk, minimal-risk), `confidence` (high, medium, low), `reasoning` (a 3 to 6 sentence paragraph grounded in the retrieved passages), `citations` (a list of Article and Annex references with page numbers), and `needs_human_review` (a boolean for the Week 7 HITL banner). The Week 6 Streamlit UI will import `classify_system()` directly.
+
+Module-first build, not CLI-first. The same file exposes a `main()` entry point for development testing under `if __name__ == "__main__":`, so today's runnable demonstration and the Week 6 UI both call the same function. One source of truth for the classification logic. Same shape as the existing `build_index.py` and `grounded_qa.py`, but with the public/private split made explicit.
+
+Four design decisions worth recording.
+
+`temperature=0.0` for classification, against `0.1` for Q&A. The same description should always get the same tier across runs. Determinism is the point. Q&A can afford a small amount of latitude in phrasing; classification cannot.
+
+`response_format={"type": "json_object"}` uses Groq's JSON mode. The model is constrained to return parseable JSON. The defensive `_parse_response()` function still has fallbacks for malformed output and unrecognised tier names, but JSON mode prevents those paths from firing in practice.
+
+The retrieval query is augmented. Even when a system description does not mention "high-risk", "Annex III", "Article 5", or "transparency", the retrieval query appends those terms before searching. Without this, descriptions of clearly prohibited or high-risk systems can fail to surface the right Articles. This is a small but meaningful RAG technique.
+
+`needs_human_review` exists in the data model from day one. It is the seed for the Week 7 human-in-the-loop banner. Building it in now rather than retrofitting it later means the UI layer in Week 6 can read it without schema changes.
+
+Four hand-checked test cases, one per tier, run on 1 June 2026. All four matched their expected tier with high confidence: hiring CV screener (high-risk, Annex III(4)(a), page 130 and Article 6 page 53), customer service chatbot (limited-risk, Article 50 page 97), social scoring system (prohibited, Article 5), internal spam filter (minimal-risk, ruled out each higher tier in turn). Detailed observations in `tests/test_classifications.md`.
+
+Two real defects observed and recorded honestly.
+
+Citation formatting is inconsistent. When the model classifies a system INTO a tier, it cites with real page numbers (e.g. "Annex III, page 130"). When it rules a tier OUT, it cites the Article generically without a page (e.g. "Article 50, page not specified"). All four cases show this pattern. The fix is likely a tighter prompt template; flagged for the Week 8 evaluation harness.
+
+`needs_human_review` returned false on all four cases. For three of them this is correct. For the CV screener it is debatable; the boundary between "AI-assisted ranking" and "AI-driven decision-making" is contested in practice, and a real compliance officer would still flag a CV screener for legal review. The classifier is more confident than the underlying legal position warrants for borderline cases. Week 8 evaluation will measure how often this happens and tune the prompt with explicit "flag for review" criteria.
+
+![Week 4 classifier working](./build_journey/week04_classifier_working.jpg)
+
+The screenshot shows the project file tree with `classify.py` and `test_classifications.md` in place, and the terminal output of the CV screener classification with `Tier: high-risk`, `Confidence: high`, grounded reasoning citing Annex III and Article 6, page-numbered citations, and the `Expected: high-risk   Got: high-risk   (match)` line.
+
+A note on pace. Weeks 1, 2, and 3 were built on three consecutive days (29, 30, 31 May). 1 June started as a rest day in the morning and turned into the Week 4 build in the afternoon. The dates in this log reflect what happened, not the original spec's 6-to-12-hours-per-week cadence. Weeks 5 through 11 will not all move at this pace; the harder weeks (UI in Week 6, privacy and accessibility in Week 7, evaluation harness in Week 8, real-user testing in Week 10) need more thought and more wall-clock time.
+
 ## Up next
 
-Week 4, the risk classifier. Take a plain-language description of an AI system, retrieve relevant articles and Annex III categories, and return a structured classification into one of four tiers (prohibited, high-risk, limited-risk, minimal-risk) with reasoning and citations.
+Week 5, obligations and gap report. Take a tier returned by the Week 4 classifier and map it to the specific obligations that apply, then turn those obligations into a plain-language checklist showing where a described AI system is and is not yet compliant. This is what an SME compliance officer actually needs on screen: not just "you are high-risk" but "you are high-risk and here is what you need to do about it before 2 August 2026."
