@@ -37,3 +37,14 @@ All Rights Reserved. See LICENSE.
 ## Build journey
 
 Week-by-week history of the project, with screenshots: see [docs/BUILD_JOURNEY.md](./docs/BUILD_JOURNEY.md).
+## Week 5: obligations report (live)
+
+For any classified system, Aegis now returns an obligations report:
+- the operative Articles that apply to that tier
+- a verifiable source passage from the Act for each Article, with the
+  page number where the Article begins in the source PDF
+- a per-system note explaining why the Article applies to this specific
+  system
+
+Run with `python src/aegis/obligations.py`. Citation accuracy: 11 of 11
+page references audited against `data/ai_act.pdf`. See `tests/test_obligations.md`.

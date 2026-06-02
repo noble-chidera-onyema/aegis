@@ -20,3 +20,11 @@ pypdf==5.1.0
 # break Week 2 retrieval. The SDK has lighter deps and lets us write the
 # prompt template ourselves, which Week 4's risk classifier needs anyway.
 groq==1.1.1
+
+# Week 5 PDF re-extraction.
+# pdfplumber preserves text positions and produces clean output on
+# CELEX-format legal PDFs where pypdf introduces letter-spacing artefacts.
+# pypdf stays in the file because build_index.py originally used it; the
+# new build_index.py uses pdfplumber instead. The pypdf pin is kept so the
+# Week 2 history reproduces if anyone clones an older commit.
+pdfplumber==0.11.4
