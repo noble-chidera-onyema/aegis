@@ -221,4 +221,12 @@ GROQ_MODEL is now read from the environment, defaulting to llama-3.3-70b-versati
 
 ### State at end of Week 6
 
-All four screens work end to end. Classification, the full ten-article obligations report with correct page citations, and both Q&A paths return correct, cited answers. Screenshots: week06_obligations_report.jpg and week06_ask_grounded_answer.jpg in docs/build_journey/.
+All four screens work end to end. Classification, the full ten-article obligations report with correct page citations, and both Q&A paths return correct, cited answers.
+
+![Week 6 obligations report rendering in the Streamlit UI](./build_journey/week06_obligations_report.jpg)
+
+The obligations report for the high-risk CV-screener: each Article with its page citation, the per-system AI note in a styled box, and the checklist question.
+
+![Week 6 Ask tab returning a grounded answer about high-risk classification](./build_journey/week06_ask_grounded_answer.jpg)
+
+The Ask tab answering "What makes an AI system high-risk?" with Article 6's two-condition test and the Article 7 amendment power, cited to the source pages.
