@@ -229,4 +229,55 @@ The obligations report for the high-risk CV-screener: each Article with its page
 
 ![Week 6 Ask tab returning a grounded answer about high-risk classification](./build_journey/week06_ask_grounded_answer.jpg)
 
-The Ask tab answering "What makes an AI system high-risk?" with Article 6's two-condition test and the Article 7 amendment power, cited to the source pages.
+The Ask tab answering "What makes an AI system high-risk?" with Article 6's two-condition test and the Article 7 amendment power, cited to the source pages.## Week 7 (built 5 June 2026) — Human-in-the-loop, privacy, accessibility
+
+A note on timing, same as before. "Week" is a unit of scope, not a calendar week. Week 6 closed on 4 June; this work was built on 5 June. The label tracks the plan, not elapsed time.
+
+### What this covered
+
+Week 7 was about making the tool trustworthy and finished rather than just functional: a human-in-the-loop layer, clearer on-screen copy, accurate privacy information, a visual polish pass, and an accessibility review against WCAG 2.2 AA.
+
+### Human-in-the-loop
+
+The `needs_human_review` flag has been in the classifier's data model since Week 4, waiting for this. The design decision was how the UI should use it. Two options: show a review banner only when the flag is true, or show a standing caution on every classification and escalate when the flag fires.
+
+I built the second. The reason is the defect recorded in Week 4: the flag underfires on borderline cases like the CV screener, where the model is more confident than the legal position warrants. A banner that only appears when the model admits doubt does nothing in exactly the case that matters, when the model is wrongly certain. The EU AI Act's own human-oversight Article (Article 14) names automation bias, the tendency to over-rely on a confident-looking automated output, as the thing oversight must guard against. A persistent caution floor plus an escalation banner is the design that addresses that, and it matches the human-factors literature on automation bias over intermittent-only alerts.
+
+So every classification now carries a standing caution line. When the flag is true, a stronger banner escalates above it. The user can record their judgement with two controls: accept the tier, or flag disagreement. That decision carries to the Obligations screen, a disputed classification marks the report as provisional. This is the "loop": the human is not just warned, their review is captured and travels with the result.
+
+### Screen copy and progressive disclosure
+
+Each of the four screens had its intro copy reworked to a single scannable line plus a collapsible "How this works" expander holding the detail. This is the progressive-disclosure pattern: the line serves users who scan, the expander serves users who want orientation, and neither pays for the other. A wall of intro text would have been skipped; a bare screen raises uncertainty for first-time users.
+
+### Privacy
+
+The privacy claims were corrected for accuracy. The earlier wording said inputs "are not stored" and, separately, "may be retained up to 30 days," which together overclaimed in one place and were vague in another. Checked against Groq's current policy: inference requests are not retained by default; they may be logged briefly (up to 30 days) only for error or abuse investigation, and data is encrypted in transit (TLS 1.2+) and at rest (AES-256). The footer, the in-form warnings, and a new dedicated privacy section on the Inventory screen now state exactly that. The privacy section was surfaced on the first screen rather than left in the footer, because on a tool for compliance-conscious users, how their input is handled is a feature, not a footnote.
+
+### UI polish
+
+Streamlit's default expander toggle is faint and only clear on hover, which fails discoverability and accessibility. The expander header is now a bordered, padded, accent-coloured bar with the caret visible at all times. A small shield mark was added beside the wordmark in the header (Aegis means shield; the mark signals protection and readiness, not legal authority). A scales-or-justice background watermark was considered and rejected: it would contradict the "not legal advice" message the tool repeats on every screen, and a faint background mark behind text fails contrast.
+
+### Accessibility (WCAG 2.2 AA)
+
+Contrast was computed from the actual hex values for every text pairing, not eyeballed. All passed except the high-risk ochre, which sat at 4.52 on the main background and 4.27 on the review banner, either side of the 4.5 line for normal text. The ochre was darkened from #9A6A1E to #8A5E15, which clears 5.4+ on both backgrounds and is visually near-identical. Keyboard navigation was tested: tab order reaches every control with a visible focus outline, and Enter, Space, and arrow keys operate them. Form inputs carry accessible labels even where the label is visually collapsed; the decorative shield is aria-hidden.
+
+### Ethics
+
+The optional academic-ethics route was initiated, not skipped. The project is a personal portfolio piece, not submitted coursework, so the university has no claim over it on that basis. To keep the option of writing the work up for publication later, an email was sent to a course contact asking for the right ethics process for small user testing, and asking directly whether engaging that process has any bearing on ownership. Approval, if pursued, must be in place before any Week 10 user testing. Status: awaiting guidance.
+
+### Bugs hit and fixed
+
+Two display-bug recurrences worth recording. Expander bullets first rendered as empty markers with no text: the cause was Python adjacent-string-literal concatenation mangling the markdown, the same class of rendering bug seen in Week 6. Fixed by writing each expander's content as a single triple-quoted string with real line breaks. Separately, a `str_replace` during the build accidentally un-nested the obligations notes loop, caught and fixed before it shipped.
+
+### State at end of Week 7
+
+All Week 7 build items are complete: human-in-the-loop, screen copy, privacy accuracy and the privacy section, UI polish, and the accessibility pass. The ethics route is initiated and awaiting guidance.
+
+![Week 7 human-in-the-loop on the Classification screen](./build_journey/week07_hitl_review.jpg)
+
+The Classification screen showing the standing caution floor on every result, the accept and disagree controls, and the green badge recording that the user reviewed and accepted the tier.
+
+![Week 7 progressive disclosure and the privacy section on the Inventory screen](./build_journey/week07_privacy_and_disclosure.jpg)
+
+The Inventory screen with both expanders: "How this works" and the dedicated privacy section stating what Aegis and Groq do with the user's input.
+

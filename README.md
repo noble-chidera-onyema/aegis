@@ -22,7 +22,7 @@ Built in Python with Streamlit, LlamaIndex, Chroma, and Groq. Will deploy on Str
 
 ## Privacy
 
-Session-only. Nothing is stored. Inputs are sent to Groq for inference and may be retained by them for up to 30 days per their terms. The in-app privacy notice says so plainly. Users are warned not to enter personal data.
+Session-only. Aegis stores nothing; inputs live in the browser session and are gone when the tab closes. Inputs are sent to Groq to generate answers. Per Groq's policy, inference requests are not retained by default and may be logged briefly (up to 30 days) only for error or abuse investigation; data is encrypted in transit and at rest. The in-app privacy notice and a dedicated privacy section on the Inventory screen say so plainly. Users are warned not to enter personal data.
 
 ## Author
 
@@ -63,3 +63,13 @@ A classified system carries across all four tabs through shared session state. E
 Run with `streamlit run app.py` from the project root.
 
 Known limits, scheduled for the Week 8 evaluation harness: conceptual questions that name no Article rely on semantic retrieval, whose quality across a wide question set has not been measured systematically yet; top-k is fixed at 5; the Article-header detector found 114 headers against 113 operative Articles. All citation claims that appear in screenshots are verified against `data/ai_act.pdf` before publishing.
+
+## Week 7: human-in-the-loop, privacy, accessibility (live)
+
+The tool now keeps a person in the loop on every classification. A standing caution sits under each result, and a stronger banner escalates when the classifier flags a case for review. The user can accept the tier or flag disagreement, and that decision carries to the Obligations report, which marks itself provisional when the classification is disputed. This is aligned with the EU AI Act's own human-oversight Article, which names automation bias as the risk to guard against.
+
+Each screen now leads with a single scannable line and a collapsible "How this works" panel, so the detail is there without burying the task. A dedicated privacy section on the Inventory screen states what Aegis and Groq do with the user's input, checked against Groq's current policy.
+
+Accessibility was reviewed against WCAG 2.2 AA: text contrast was computed for every colour pairing and the one borderline value was corrected, keyboard navigation reaches and operates every control with a visible focus outline, and form inputs carry accessible labels.
+
+Run with `streamlit run app.py` from the project root.
