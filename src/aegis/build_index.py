@@ -1,14 +1,16 @@
 """
-Aegis index builder (Article-aware version).
+Aegis index builder, v3 (Article- and Annex-aware).
 
-Reads ai_act.pdf with pdfplumber, then performs Article-aware text splitting:
-detects every "Article N" header in the document, splits the text on those
-boundaries, and tags each resulting chunk with structured Article metadata.
+Reads ai_act.pdf with pdfplumber, detects every "Article N" AND "ANNEX N"
+header, splits on those boundaries, and tags each chunk with:
+  - provision: "Article 14", "Annex III", or "Recitals"
+  - provision_start_page: the page where that provision begins
+  - page: the real page this chunk's own text sits on
 
-This architecture replaces text-search-based citation lookup with metadata
-filtering. Each chunk knows which Article it belongs to via metadata, so
-finding "the text of Article 9" is a metadata query, not a regex search
-that depends on chunk-boundary luck.
+Why both pages: citations should name the provision and the page where it
+begins (the page a reader flips to), while the chunk's own page is kept for
+audit. v1 had no Annex boundaries at all, so Annex III text was glued onto the
+last Article's chunks with no Annex metadata.
 
 Run from the project root:
     python src/aegis/build_index.py
@@ -41,16 +43,11 @@ SOURCE_PDFS = ["ai_act.pdf"]
 
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
-# Sub-chunking inside long Articles: only kicks in when an Article exceeds
-# this many characters. Most Articles are shorter than this and stay in
-# one chunk along with their header.
 SUB_CHUNK_SIZE = 1500
 SUB_CHUNK_OVERLAP = 200
 
-# Matches an Article header line: "Article 9" at the start of a line.
-# The (?=\n) lookahead ensures we match a standalone header line, not
-# a cross-reference embedded in a sentence.
 ARTICLE_HEADER = re.compile(r"^Article\s+(\d+)\s*$", re.MULTILINE)
+ANNEX_HEADER = re.compile(r"^ANNEX\s+([IVXLC]+)\s*$", re.MULTILINE)
 
 
 def extract_full_text_with_pages(pdf_path: Path) -> list[tuple[int, str]]:
@@ -64,25 +61,19 @@ def extract_full_text_with_pages(pdf_path: Path) -> list[tuple[int, str]]:
     return pages
 
 
-def find_article_boundaries(pages: list[tuple[int, str]]) -> list[dict]:
+def build_char_to_page(pages: list[tuple[int, str]]):
     """
-    Detect every Article header in the document and return a list of
-    Article boundaries.
-
-    Returns: list of dicts with keys: article_number, start_page,
-    start_char_in_concatenated, header_text.
+    Concatenate pages into one text and return (full_text, char_to_page),
+    where char_to_page(char_index) gives the real page for that position.
     """
-    # Concatenate all pages into one big text with page markers we can
-    # use to track which page each character lives on.
     full_text = ""
-    page_offsets = []  # (start_char_index, page_number) pairs
+    page_offsets = []
     for page_num, text in pages:
         page_offsets.append((len(full_text), page_num))
         full_text += text + "\n"
 
     def char_to_page(char_idx: int) -> int:
-        """Map a character index in full_text back to a page number."""
-        page = page_offsets[0][1]
+        page = page_offsets[0][1] if page_offsets else 1
         for offset, pnum in page_offsets:
             if offset <= char_idx:
                 page = pnum
@@ -90,26 +81,58 @@ def find_article_boundaries(pages: list[tuple[int, str]]) -> list[dict]:
                 break
         return page
 
+    return full_text, char_to_page
+
+
+def find_boundaries(full_text: str, char_to_page) -> list[dict]:
+    """
+    Detect every Article and Annex header. Returns boundaries sorted by
+    position, each with: provision ("Article 14" / "Annex III"),
+    article_number (int, 0 for annexes), start_char, start_page.
+    """
     boundaries = []
     for match in ARTICLE_HEADER.finditer(full_text):
-        article_num = int(match.group(1))
-        start = match.start()
+        num = int(match.group(1))
         boundaries.append({
-            "article_number": article_num,
-            "start_char": start,
-            "start_page": char_to_page(start),
-            "header_text": match.group(0),
+            "provision": f"Article {num}",
+            "article_number": num,
+            "start_char": match.start(),
+            "start_page": char_to_page(match.start()),
         })
+    for match in ANNEX_HEADER.finditer(full_text):
+        numeral = match.group(1)
+        boundaries.append({
+            "provision": f"Annex {numeral}",
+            "article_number": 0,
+            "start_char": match.start(),
+            "start_page": char_to_page(match.start()),
+        })
+    boundaries.sort(key=lambda b: b["start_char"])
+    return boundaries
 
-    return boundaries, full_text
 
-
-def build_article_chunks(full_text: str, boundaries: list[dict]) -> list[dict]:
+def _page_for_subchunk(sub_text: str, search_from: int, full_text: str,
+                       char_to_page, fallback_page: int) -> tuple[int, int]:
     """
-    Split the full text into Article-bounded chunks.
+    Locate sub_text in full_text from search_from; return (page, new_cursor).
+    Falls back to fallback_page if not found.
+    """
+    idx = full_text.find(sub_text[:200], search_from)
+    if idx == -1:
+        anchor = sub_text.strip()[:40]
+        if anchor:
+            idx = full_text.find(anchor, search_from)
+    if idx == -1:
+        return fallback_page, search_from
+    return char_to_page(idx), idx + 1
 
-    Each chunk represents one Article (or a portion of one long Article).
-    Returns: list of dicts with text, article_number, start_page, sub_chunk_index.
+
+def build_provision_chunks(full_text: str, boundaries: list[dict],
+                           char_to_page) -> list[dict]:
+    """
+    Split full_text into provision-bounded chunks (Articles and Annexes).
+    Sub-chunks of long provisions get their own real page; every chunk also
+    carries the provision's start page.
     """
     chunks = []
     splitter = SentenceSplitter(
@@ -120,41 +143,39 @@ def build_article_chunks(full_text: str, boundaries: list[dict]) -> list[dict]:
     for i, b in enumerate(boundaries):
         start = b["start_char"]
         end = boundaries[i + 1]["start_char"] if i + 1 < len(boundaries) else len(full_text)
-        article_text = full_text[start:end].strip()
-
-        if not article_text:
+        text = full_text[start:end].strip()
+        if not text:
             continue
 
-        if len(article_text) <= SUB_CHUNK_SIZE:
-            # Short Article fits in one chunk along with its header.
-            chunks.append({
-                "text": article_text,
-                "article_number": b["article_number"],
-                "start_page": b["start_page"],
-                "sub_chunk_index": 0,
-            })
+        base = {
+            "provision": b["provision"],
+            "article_number": b["article_number"],
+            "provision_start_page": b["start_page"],
+        }
+
+        if len(text) <= SUB_CHUNK_SIZE:
+            chunks.append({**base, "text": text, "page": b["start_page"],
+                           "sub_chunk_index": 0})
         else:
-            # Long Article: split into sub-chunks. Every sub-chunk keeps
-            # the same article_number so metadata lookup still works.
-            sub_texts = splitter.split_text(article_text)
+            sub_texts = splitter.split_text(text)
+            cursor = start
             for j, sub_text in enumerate(sub_texts):
-                chunks.append({
-                    "text": sub_text,
-                    "article_number": b["article_number"],
-                    "start_page": b["start_page"],
-                    "sub_chunk_index": j,
-                })
+                page, cursor = _page_for_subchunk(
+                    sub_text, cursor, full_text, char_to_page, b["start_page"]
+                )
+                chunks.append({**base, "text": sub_text, "page": page,
+                               "sub_chunk_index": j})
 
     return chunks
 
 
-def build_preamble_chunks(full_text: str, first_article_start: int) -> list[dict]:
+def build_preamble_chunks(full_text: str, first_boundary_start: int,
+                          char_to_page) -> list[dict]:
     """
-    The text before the first Article (cover page, recitals, table of contents)
-    becomes its own set of chunks tagged article_number=0. This keeps the recital
-    text searchable for Q&A but distinguishable from operative Articles.
+    Text before the first Article/Annex (cover, recitals) becomes chunks
+    tagged provision="Recitals". Each gets its real page.
     """
-    preamble = full_text[:first_article_start]
+    preamble = full_text[:first_boundary_start]
     if not preamble.strip():
         return []
     splitter = SentenceSplitter(
@@ -162,26 +183,29 @@ def build_preamble_chunks(full_text: str, first_article_start: int) -> list[dict
         chunk_overlap=SUB_CHUNK_OVERLAP,
     )
     sub_texts = splitter.split_text(preamble)
-    return [
-        {
+    chunks = []
+    cursor = 0
+    for j, t in enumerate(sub_texts):
+        page, cursor = _page_for_subchunk(t, cursor, full_text, char_to_page, 1)
+        chunks.append({
             "text": t,
-            "article_number": 0,  # 0 = preamble/recitals
-            "start_page": 1,
+            "provision": "Recitals",
+            "article_number": 0,
+            "provision_start_page": page,  # for recitals, cite the excerpt's page
+            "page": page,
             "sub_chunk_index": j,
-        }
-        for j, t in enumerate(sub_texts)
-    ]
+        })
+    return chunks
 
 
 def main() -> int:
-    print("Aegis index builder (Article-aware)")
+    print("Aegis index builder v3 (Article- and Annex-aware)")
     print(f"  Data directory : {DATA_DIR}")
     print(f"  Chroma DB path : {CHROMA_DB_PATH}")
     print(f"  Collection     : {COLLECTION_NAME}")
     print(f"  Embedding model: {EMBEDDING_MODEL}")
     print()
 
-    # Step 1: extract text from PDFs.
     print("[1/5] Extracting text with pdfplumber...")
     all_documents = []
     for pdf_name in SOURCE_PDFS:
@@ -192,60 +216,56 @@ def main() -> int:
         pages = extract_full_text_with_pages(pdf_path)
         print(f"      {pdf_name}: {len(pages)} pages with text")
 
-        # Step 2: detect Article boundaries.
-        print(f"[2/5] Detecting Article boundaries in {pdf_name}...")
-        boundaries, full_text = find_article_boundaries(pages)
-        article_nums = sorted(set(b["article_number"] for b in boundaries))
-        print(f"      Found {len(boundaries)} Article header(s).")
-        print(f"      Article numbers detected: {article_nums[:5]}...{article_nums[-5:]}")
+        full_text, char_to_page = build_char_to_page(pages)
+
+        print(f"[2/5] Detecting Article and Annex boundaries in {pdf_name}...")
+        boundaries = find_boundaries(full_text, char_to_page)
+        articles = [b for b in boundaries if b["provision"].startswith("Article")]
+        annexes = [b for b in boundaries if b["provision"].startswith("Annex")]
+        print(f"      Articles found: {len(articles)}")
+        print(f"      Annexes found : {len(annexes)} -> {[b['provision'] for b in annexes]}")
+        if annexes:
+            print(f"      Annex start pages: {[(b['provision'], b['start_page']) for b in annexes]}")
+        if not annexes:
+            print("      WARNING: no ANNEX headers detected. Check the regex against the PDF's annex heading format.")
 
         if not boundaries:
-            print(f"      WARNING: no Articles detected. Document will be chunked as preamble only.")
-            preamble_chunks = build_preamble_chunks(full_text, len(full_text))
-            for c in preamble_chunks:
-                all_documents.append(Document(
-                    text=c["text"],
-                    metadata={
-                        "source": pdf_name,
-                        "article_number": c["article_number"],
-                        "page": c["start_page"],
-                        "sub_chunk_index": c["sub_chunk_index"],
-                    },
-                ))
-            continue
+            print(f"      WARNING: no boundaries detected. Chunking as preamble only.")
+            preamble_chunks = build_preamble_chunks(full_text, len(full_text), char_to_page)
+            all_chunks = preamble_chunks
+        else:
+            print(f"[3/5] Building provision-bounded chunks...")
+            preamble_chunks = build_preamble_chunks(full_text, boundaries[0]["start_char"], char_to_page)
+            provision_chunks = build_provision_chunks(full_text, boundaries, char_to_page)
+            all_chunks = preamble_chunks + provision_chunks
+            print(f"      Preamble chunks : {len(preamble_chunks)}")
+            print(f"      Provision chunks: {len(provision_chunks)}")
+            print(f"      Total chunks    : {len(all_chunks)}")
 
-        # Step 3: build chunks.
-        print(f"[3/5] Building Article-bounded chunks...")
-        preamble_chunks = build_preamble_chunks(full_text, boundaries[0]["start_char"])
-        article_chunks = build_article_chunks(full_text, boundaries)
-        all_chunks = preamble_chunks + article_chunks
-        print(f"      Preamble chunks: {len(preamble_chunks)}")
-        print(f"      Article chunks : {len(article_chunks)}")
-        print(f"      Total chunks   : {len(all_chunks)}")
+        page1 = sum(1 for c in all_chunks if c["page"] == 1)
+        print(f"      Chunks on page 1: {page1} (a small number is expected)")
 
         for c in all_chunks:
             all_documents.append(Document(
                 text=c["text"],
                 metadata={
                     "source": pdf_name,
+                    "provision": c["provision"],
                     "article_number": c["article_number"],
-                    "page": c["start_page"],
+                    "provision_start_page": c["provision_start_page"],
+                    "page": c["page"],
                     "sub_chunk_index": c["sub_chunk_index"],
                 },
             ))
 
     print()
-
-    # Step 4: load the embedding model.
     print(f"[4/5] Loading embedding model (cached after first run)...")
     embed_model = HuggingFaceEmbedding(model_name=EMBEDDING_MODEL)
     Settings.embed_model = embed_model
     print(f"      Loaded {EMBEDDING_MODEL}.")
 
-    # Step 5: re-create Chroma collection and index.
     print(f"[5/5] Embedding chunks and writing to Chroma. Takes 1 to 3 minutes...")
     db = chromadb.PersistentClient(path=str(CHROMA_DB_PATH))
-
     try:
         db.delete_collection(COLLECTION_NAME)
         print(f"      Dropped previous collection.")

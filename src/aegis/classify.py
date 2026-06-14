@@ -1,12 +1,16 @@
 """
-Aegis risk classifier: take a plain-language description of an AI system,
-return a structured classification into one of four EU AI Act risk tiers
-(prohibited, high-risk, limited-risk, minimal-risk) with reasoning and
-citations to specific articles or Annex III categories.
+Aegis risk classifier, v3.
 
-Designed as a function module first, with a CLI entry point at the bottom
-for development testing. The Week 6 Streamlit UI will import
-classify_system() directly.
+Changes from v2, each driven by the v1/v2 evaluation results:
+1. Citation convention: passages are presented with their provision name and
+   the page where the provision BEGINS; the model is instructed to cite that
+   start page. This matches the citation convention a reader needs (the page
+   to flip to) and the convention used in the evaluation ground truth.
+2. Tier decision procedure: explicit rules targeting the measured error
+   pattern (limited-risk over-assignment; missed exceptions).
+3. Review-flag floor in code: needs_human_review is forced True whenever the
+   model's confidence is not "high", regardless of what the model set.
+   This addresses the measured underfire (fired on 1 of 10 boundary cases).
 
 Run from the project root for a CLI demonstration:
     python src/aegis/classify.py
@@ -38,8 +42,8 @@ CHROMA_DB_PATH = PROJECT_ROOT / "chroma_db"
 COLLECTION_NAME = "ai_act_v1"
 
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-GROQ_MODEL = "llama-3.3-70b-versatile"
-TOP_K = 8  # More context than Q&A because classification needs broader coverage.
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+TOP_K = 8
 WRAP_WIDTH = 88
 
 
@@ -57,37 +61,52 @@ class Classification:
     reasoning: str
     citations: list[str]
     needs_human_review: bool
-    raw_response: str  # the unparsed model output, for debugging and audit
+    raw_response: str
 
 
 # --- System prompt ----------------------------------------------------------
 
-SYSTEM_PROMPT = """You are a compliance research assistant for the EU AI Act. Your job is to classify a described AI system into one of four risk tiers and explain why, using only the passages provided from the Act itself.
+SYSTEM_PROMPT = """You are a compliance research assistant for the EU AI Act. Classify a described AI system into one of four risk tiers using only the passages provided from the Act.
 
-The four tiers:
-- "prohibited": practices banned under Article 5 (subliminal manipulation, exploitation of vulnerabilities, social scoring, untargeted scraping of facial images for databases, emotion inference in workplace or education, biometric categorisation by sensitive attributes, certain real-time biometric identification in public spaces).
-- "high-risk": systems listed in Annex III (biometrics, critical infrastructure, education, employment, essential services, law enforcement, migration, justice, democratic processes) and certain safety components under Annex I.
-- "limited-risk": systems subject to transparency obligations under Article 50 (chatbots, deepfakes, AI-generated content, emotion recognition outside prohibited contexts).
-- "minimal-risk": everything else. Most AI systems fall here.
+Apply this decision procedure IN ORDER:
+
+STEP 1, Article 5 (prohibited). Check each Article 5 practice. Two gates matter:
+- The manipulation and exploitation prohibitions (5(1)(a), 5(1)(b)) require BOTH material distortion of behaviour AND significant harm. Ordinary commercial persuasion, engagement features, or upselling without significant harm do NOT meet the gate.
+- Several prohibitions carry exceptions. Emotion inference in the workplace is NOT prohibited when for medical or safety reasons (5(1)(f)). Real-time remote biometric identification for law enforcement under the listed exceptions in 5(1)(h) is NOT prohibited; it is regulated as high-risk instead.
+If a prohibition fully applies with its gates met and no exception, the tier is "prohibited".
+
+STEP 2, high-risk. Check Annex III use cases (biometrics, critical infrastructure, education, employment, essential services, law enforcement, migration, justice, democratic processes) and Article 6(1) safety components of regulated products (e.g. medical devices). Notes:
+- Annex III point 5(b) creditworthiness EXCLUDES AI used to detect financial fraud. Fraud detection is not high-risk under 5(b).
+- A human reviewing or having override does NOT remove high-risk status when the system materially influences the decision (evaluating candidates, grading students, proctoring exams).
+
+STEP 3, limited-risk (Article 50). Assign ONLY when the system itself is one of: a system interacting directly with people (chatbot), generating synthetic content or deep fakes, or emotion recognition / biometric categorisation outside prohibited contexts. Notes:
+- AI that merely assists standard editing (spell-check, grammar, transcription) or processes the user's own content does NOT trigger Article 50; that is minimal-risk.
+- Do NOT assign limited-risk as a compromise when unsure between minimal-risk and high-risk. Limited-risk requires an actual Article 50 trigger.
+
+STEP 4, otherwise "minimal-risk". Most AI systems land here. Internal tools, logistics, forecasting, quality control, and recommendation systems with no Annex III use are minimal-risk.
+
+Citation rules:
+- Each passage is labelled with its provision (e.g. "Article 14" or "Annex III") and the page where that provision BEGINS. Cite the provision and that beginning page. Example: "Annex III, point 4(b), page 127" or "Article 50(1), page 82".
+- Never cite passage numbers (never write "Passage 3"). Never write "page not specified". If you rely on a recital, cite "Recitals, page N" using the page shown on that passage.
 
 Output rules:
-1. Respond with ONLY a JSON object. No preamble. No closing remarks. No markdown fences.
-2. The JSON must have exactly these keys: tier, confidence, reasoning, citations, needs_human_review.
-3. tier must be one of: "prohibited", "high-risk", "limited-risk", "minimal-risk".
-4. confidence must be one of: "high", "medium", "low".
-5. reasoning is a short paragraph (3 to 6 sentences) explaining the classification, grounded in the passages provided.
-6. citations is a list of strings, each naming the specific Article or Annex section, with a page number where the passage came from. Example: "Article 5(1)(a), page 51" or "Annex III, point 4(a), page 130".
-7. needs_human_review is a boolean. Set it to true if any of the following apply: the description is ambiguous, the description falls near a tier boundary, the retrieved passages do not strongly support the classification, or the system might also implicate transparency obligations under Article 50 in addition to its primary tier.
-8. If the retrieved passages do not cover the question, set tier to "minimal-risk" with confidence "low" and needs_human_review to true, and say so in reasoning.
+1. Respond with ONLY a JSON object. No preamble. No markdown fences.
+2. Keys: tier, confidence, reasoning, citations, needs_human_review.
+3. tier: one of "prohibited", "high-risk", "limited-risk", "minimal-risk".
+4. confidence: one of "high", "medium", "low". Use "high" only when the classification is clear-cut under the decision procedure; use "medium" or "low" whenever the case sits near a tier boundary or depends on an exception.
+5. reasoning: 3 to 6 sentences, grounded in the provided passages.
+6. citations: list of strings per the citation rules above.
+7. needs_human_review: true if the description is ambiguous, near a tier boundary, depends on an exception or a contested reading, or the passages weakly support the classification.
+8. If the passages do not cover the question, use tier "minimal-risk", confidence "low", needs_human_review true, and say so in reasoning.
 
-This is decision-support for compliance officers. Be cautious. When in doubt, classify higher and flag for human review.
+This is decision-support for compliance officers, not legal advice. Be cautious. When genuinely in doubt between two tiers, classify higher and flag for human review.
 """
 
 
 # --- Index loading ----------------------------------------------------------
 
 def load_index() -> VectorStoreIndex:
-    """Open the Chroma collection built in Week 2."""
+    """Open the Chroma collection."""
     db = chromadb.PersistentClient(path=str(CHROMA_DB_PATH))
     collection = db.get_collection(COLLECTION_NAME)
     embed_model = HuggingFaceEmbedding(model_name=EMBEDDING_MODEL)
@@ -98,9 +117,6 @@ def load_index() -> VectorStoreIndex:
 
 def retrieve_chunks(index: VectorStoreIndex, description: str, top_k: int = TOP_K):
     """Return the top-k most relevant chunks for a system description."""
-    # Augment the retrieval query with classification-relevant terms so we
-    # pull Article 5 (prohibited) and Annex III (high-risk) chunks even when
-    # the description doesn't use those words.
     retrieval_query = (
         f"{description} prohibited practices high-risk AI systems Annex III "
         f"transparency obligations Article 5 Article 50"
@@ -109,13 +125,34 @@ def retrieve_chunks(index: VectorStoreIndex, description: str, top_k: int = TOP_
     return retriever.retrieve(retrieval_query)
 
 
+def _passage_label(node) -> str:
+    """
+    Build the passage header from chunk metadata. v3 indexes carry
+    'provision' and 'provision_start_page'; fall back gracefully on
+    older metadata so the module still works against a v2 index.
+    """
+    md = node.metadata
+    provision = md.get("provision")
+    start_page = md.get("provision_start_page")
+    page = md.get("page", "?")
+    if provision and start_page:
+        if provision == "Recitals":
+            return f"{provision}, page {page}"
+        return f"{provision}, begins page {start_page} (this excerpt: page {page})"
+    # Fallback for pre-v3 metadata.
+    art = md.get("article_number", 0)
+    if art:
+        return f"Article {art}, page {page}"
+    return f"Recitals, page {page}"
+
+
 def build_user_prompt(description: str, retrieved_nodes) -> str:
     """Format description + retrieved chunks into the user message."""
     chunks_text = []
-    for i, node in enumerate(retrieved_nodes, start=1):
-        page = node.metadata.get("page", "?")
+    for node in retrieved_nodes:
+        label = _passage_label(node)
         text = node.text.replace("\n", " ").strip()
-        chunks_text.append(f"[Passage {i}, page {page}]\n{text}")
+        chunks_text.append(f"[{label}]\n{text}")
 
     chunks_block = "\n\n".join(chunks_text)
 
@@ -133,15 +170,6 @@ def classify_system(description: str, client: Groq | None = None,
                     index: VectorStoreIndex | None = None) -> Classification:
     """
     Classify an AI system description into one of four EU AI Act risk tiers.
-
-    Args:
-        description: plain-language description of the AI system.
-        client: an existing Groq client. Created from env if not supplied.
-        index: an existing VectorStoreIndex. Loaded from disk if not supplied.
-
-    Returns:
-        Classification with tier, confidence, reasoning, citations, and a
-        needs_human_review flag.
     """
     if client is None:
         load_dotenv()
@@ -157,14 +185,14 @@ def classify_system(description: str, client: Groq | None = None,
     user_prompt = build_user_prompt(description, chunks)
 
     response = client.chat.completions.create(
-        model=GROQ_MODEL,
+        model=os.getenv("GROQ_MODEL", GROQ_MODEL),
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ],
-        temperature=0.0,  # zero for maximum consistency on classification.
+        temperature=0.0,
         max_tokens=800,
-        response_format={"type": "json_object"},  # Groq supports JSON mode.
+        response_format={"type": "json_object"},
     )
     raw = response.choices[0].message.content
 
@@ -176,7 +204,6 @@ def _parse_response(raw: str) -> Classification:
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
-        # Defensive fallback. JSON mode should prevent this but never trust the model.
         return Classification(
             tier="minimal-risk",
             confidence="low",
@@ -188,7 +215,6 @@ def _parse_response(raw: str) -> Classification:
 
     tier = data.get("tier", "minimal-risk")
     if tier not in VALID_TIERS:
-        # Model returned a tier name we don't recognise. Fail safe.
         return Classification(
             tier="minimal-risk",
             confidence="low",
@@ -198,20 +224,28 @@ def _parse_response(raw: str) -> Classification:
             raw_response=raw,
         )
 
+    confidence = data.get("confidence", "low")
+    if confidence not in ("high", "medium", "low"):
+        confidence = "low"
+
+    # Review-flag floor (v3): the v1/v2 evaluations measured the model's own
+    # flag firing on only ~10% of boundary cases. The flag now also fires
+    # whenever confidence is below "high". Deterministic, not model-dependent.
+    model_flag = bool(data.get("needs_human_review", True))
+    needs_review = model_flag or (confidence != "high")
+
     return Classification(
         tier=tier,
-        confidence=data.get("confidence", "low"),
+        confidence=confidence,
         reasoning=data.get("reasoning", ""),
         citations=data.get("citations", []),
-        needs_human_review=bool(data.get("needs_human_review", True)),
+        needs_human_review=needs_review,
         raw_response=raw,
     )
 
 
 # --- CLI entry point --------------------------------------------------------
 
-# Four test descriptions, one targeted at each tier, used during development.
-# Not the formal evaluation set. Week 8 builds 30 to 50 hand-labelled examples.
 TEST_DESCRIPTIONS = [
     {
         "label": "1. Hiring CV screener",
@@ -255,7 +289,6 @@ TEST_DESCRIPTIONS = [
 
 
 def _print_classification(c: Classification) -> None:
-    """Format a Classification for the terminal."""
     print(f"\n  Tier:                  {c.tier}")
     print(f"  Confidence:            {c.confidence}")
     print(f"  Needs human review:    {c.needs_human_review}")

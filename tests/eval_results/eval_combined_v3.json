@@ -1,0 +1,738 @@
+{
+  "E01": {
+    "id": "E01",
+    "expected_tier": "minimal-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "distractor",
+    "expected_article": "Annex III point 4, page 127 (ruled out: no decision about individuals)",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Annex III, begins page 127",
+      "Article 50, begins page 82"
+    ],
+    "ran_at": "2026-06-12T13:24:08",
+    "model": "default"
+  },
+  "E02": {
+    "id": "E02",
+    "expected_tier": "high-risk",
+    "got_tier": "high-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "boundary",
+    "expected_article": "Annex III point 4(b), page 127",
+    "citation_article_match": false,
+    "citation_page_match": false,
+    "citations": [
+      "Recitals, page 16",
+      "Recitals, page 24"
+    ],
+    "ran_at": "2026-06-12T13:24:17",
+    "model": "default"
+  },
+  "E03": {
+    "id": "E03",
+    "expected_tier": "minimal-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "near-miss",
+    "expected_article": "Article 5(1)(f), page 51 (exception applies); Annex III point 1(c) ruled out via recital 18",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Article 5, page not applicable",
+      "Annex III, page 127",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-12T13:24:50",
+    "model": "default"
+  },
+  "E04": {
+    "id": "E04",
+    "expected_tier": "high-risk",
+    "got_tier": "high-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "clean",
+    "expected_article": "Annex III point 5(b), page 127",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Annex III, point 5(b), page not provided"
+    ],
+    "ran_at": "2026-06-12T13:25:22",
+    "model": "default"
+  },
+  "E05": {
+    "id": "E05",
+    "expected_tier": "minimal-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "distractor",
+    "expected_article": "Article 5(1)(a), page 51 (ruled out: no significant harm, not subliminal/deceptive)",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Article 5, page not provided",
+      "Annex III, page not provided",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-12T13:25:57",
+    "model": "default"
+  },
+  "E06": {
+    "id": "E06",
+    "expected_tier": "high-risk",
+    "got_tier": "high-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "boundary",
+    "expected_article": "Article 5(1)(h), pages 51-52 (exception (iii)); regulated as high-risk under Annex III point 1(a), page 127",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Annex III, point 6, page 127",
+      "Recitals, page 8",
+      "Recitals, page 25"
+    ],
+    "ran_at": "2026-06-13T08:42:04",
+    "model": "default"
+  },
+  "E07": {
+    "id": "E07",
+    "expected_tier": "limited-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": false,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "near-miss",
+    "expected_article": "Article 50(1), page 82",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Recitals, page 7",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-13T08:42:20",
+    "model": "default"
+  },
+  "E08": {
+    "id": "E08",
+    "expected_tier": "high-risk",
+    "got_tier": "high-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "clean",
+    "expected_article": "Annex III point 3(a), page 127",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Annex III, page 127",
+      "Recitals, page 15"
+    ],
+    "ran_at": "2026-06-13T08:42:55",
+    "model": "default"
+  },
+  "E09": {
+    "id": "E09",
+    "expected_tier": "minimal-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "distractor",
+    "expected_article": "Annex III point 2, page 127 (ruled out: not a safety component in road-traffic management)",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Article 5, page not available",
+      "Annex III, page not available",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-13T08:43:28",
+    "model": "default"
+  },
+  "E10": {
+    "id": "E10",
+    "expected_tier": "high-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": false,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "boundary",
+    "expected_article": "Annex III point 4(a), page 127",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Article 5, page not applicable",
+      "Annex III, page not applicable",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-13T08:43:56",
+    "model": "default"
+  },
+  "E11": {
+    "id": "E11",
+    "expected_tier": "minimal-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": true,
+    "confidence": "medium",
+    "needs_human_review": true,
+    "difficulty": "near-miss",
+    "expected_article": "Article 5(1)(g), pages 51-52 and Article 5(1)(c), page 51 (both ruled out)",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Article 5, page not provided",
+      "Article 6, page 53",
+      "Annex III, page not provided",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-13T08:44:32",
+    "model": "default"
+  },
+  "E12": {
+    "id": "E12",
+    "expected_tier": "limited-risk",
+    "got_tier": "high-risk",
+    "tier_correct": false,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "clean",
+    "expected_article": "Article 50(4), page 82",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Annex III, point 8, page 127",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-13T08:45:10",
+    "model": "default"
+  },
+  "E13": {
+    "id": "E13",
+    "expected_tier": "minimal-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "distractor",
+    "expected_article": "n/a (no Article 5, Annex III, or Article 50 trigger)",
+    "citation_article_match": true,
+    "citation_page_match": null,
+    "citations": [
+      "Article 5, page not provided",
+      "Annex III, page not provided",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-13T08:45:34",
+    "model": "default"
+  },
+  "E14": {
+    "id": "E14",
+    "expected_tier": "high-risk",
+    "got_tier": "high-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "boundary",
+    "expected_article": "Annex III point 5(c), page 127",
+    "citation_article_match": false,
+    "citation_page_match": false,
+    "citations": [
+      "Recitals, page 16"
+    ],
+    "ran_at": "2026-06-13T08:46:10",
+    "model": "default"
+  },
+  "E15": {
+    "id": "E15",
+    "expected_tier": "high-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": false,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "near-miss",
+    "expected_article": "Annex III point 1(c), page 127 (plus Article 50(3) transparency, page 82)",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Recitals, page 16",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-13T08:46:44",
+    "model": "default"
+  },
+  "E16": {
+    "id": "E16",
+    "expected_tier": "limited-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": false,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "clean",
+    "expected_article": "Article 50(1), page 82",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Article 50, page 82",
+      "Recitals, page 30",
+      "Recitals, page 33"
+    ],
+    "ran_at": "2026-06-13T08:47:13",
+    "model": "default"
+  },
+  "E17": {
+    "id": "E17",
+    "expected_tier": "high-risk",
+    "got_tier": "high-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "boundary",
+    "expected_article": "Annex III point 3(d), page 127",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Annex III, page not provided"
+    ],
+    "ran_at": "2026-06-13T08:47:40",
+    "model": "default"
+  },
+  "E18": {
+    "id": "E18",
+    "expected_tier": "minimal-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "distractor",
+    "expected_article": "Article 5(1)(a), page 51 (ruled out)",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Article 5, page not applicable",
+      "Annex III, page not applicable",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-14T06:39:31",
+    "model": "default"
+  },
+  "E19": {
+    "id": "E19",
+    "expected_tier": "prohibited",
+    "got_tier": "high-risk",
+    "tier_correct": false,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "near-miss",
+    "expected_article": "Article 5(1)(c), page 51",
+    "citation_article_match": false,
+    "citation_page_match": false,
+    "citations": [
+      "Annex III, page 127",
+      "Recitals, page 17"
+    ],
+    "ran_at": "2026-06-14T06:39:41",
+    "model": "default"
+  },
+  "E20": {
+    "id": "E20",
+    "expected_tier": "high-risk",
+    "got_tier": "high-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "clean",
+    "expected_article": "Annex III point 7(b), page 128",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Annex III, point 7(b), page 127",
+      "Recitals, page 17"
+    ],
+    "ran_at": "2026-06-14T06:40:11",
+    "model": "default"
+  },
+  "E21": {
+    "id": "E21",
+    "expected_tier": "minimal-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "distractor",
+    "expected_article": "Article 6(1)/Annex III point 2 (both ruled out)",
+    "citation_article_match": true,
+    "citation_page_match": null,
+    "citations": [
+      "Article 5, page not specified",
+      "Annex III, page not specified",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-14T06:40:50",
+    "model": "default"
+  },
+  "E22": {
+    "id": "E22",
+    "expected_tier": "limited-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": false,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "boundary",
+    "expected_article": "Article 50(1) and 50(2), page 82",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Article 5, page not applicable as no specific page is provided for Article 5",
+      "Annex III, page not applicable as no specific page is provided for Annex III",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-14T06:41:19",
+    "model": "default"
+  },
+  "E23": {
+    "id": "E23",
+    "expected_tier": "limited-risk",
+    "got_tier": "limited-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "near-miss",
+    "expected_article": "Article 50(3), page 82 (Annex III point 1(b) considered)",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-14T06:41:48",
+    "model": "default"
+  },
+  "E24": {
+    "id": "E24",
+    "expected_tier": "high-risk",
+    "got_tier": "high-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "clean",
+    "expected_article": "Article 6(1) with Annex I (medical devices, Regulation (EU) 2017/745), page 53",
+    "citation_article_match": false,
+    "citation_page_match": false,
+    "citations": [
+      "Annex III, page 127",
+      "Article 14, page 60",
+      "Recitals, page 13"
+    ],
+    "ran_at": "2026-06-14T06:42:23",
+    "model": "default"
+  },
+  "E25": {
+    "id": "E25",
+    "expected_tier": "minimal-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "distractor",
+    "expected_article": "Article 50(4), page 82 (editorial-control exception applies)",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Article 50, page 82",
+      "Annex III, page 127"
+    ],
+    "ran_at": "2026-06-14T06:42:56",
+    "model": "default"
+  },
+  "E26": {
+    "id": "E26",
+    "expected_tier": "high-risk",
+    "got_tier": "high-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "boundary",
+    "expected_article": "Annex III point 4(b), page 127",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Annex III, page 127",
+      "Article 14, page 60",
+      "Recitals, page 20",
+      "Recitals, page 24"
+    ],
+    "ran_at": "2026-06-14T06:43:25",
+    "model": "default"
+  },
+  "E27": {
+    "id": "E27",
+    "expected_tier": "high-risk",
+    "got_tier": "prohibited",
+    "tier_correct": false,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "near-miss",
+    "expected_article": "Annex III point 8(b), page 129 (contested alternative: prohibited under Article 5(1)(a), page 51)",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Article 5, page 51",
+      "Recitals, page 7",
+      "Recitals, page 28",
+      "Recitals, page 29"
+    ],
+    "ran_at": "2026-06-14T06:43:54",
+    "model": "default"
+  },
+  "E28": {
+    "id": "E28",
+    "expected_tier": "high-risk",
+    "got_tier": "high-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "clean",
+    "expected_article": "Annex III point 2, page 127",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Article 6, page 53",
+      "Annex III, page not specified"
+    ],
+    "ran_at": "2026-06-14T06:44:26",
+    "model": "default"
+  },
+  "E29": {
+    "id": "E29",
+    "expected_tier": "minimal-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "distractor",
+    "expected_article": "Article 50(2), page 82 (standard-editing assistive exception)",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Article 5, page not applicable as no specific page is provided for this article in the given context",
+      "Annex III, page not applicable as no specific page is provided for Annex III in the given context",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-14T06:44:56",
+    "model": "default"
+  },
+  "E30": {
+    "id": "E30",
+    "expected_tier": "minimal-risk",
+    "got_tier": "high-risk",
+    "tier_correct": false,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "boundary",
+    "expected_article": "Annex III point 5(b), page 127 (fraud-detection exception applies)",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Annex III, page not specified",
+      "Article 14, page 60"
+    ],
+    "ran_at": "2026-06-14T06:45:21",
+    "model": "default"
+  },
+  "E31": {
+    "id": "E31",
+    "expected_tier": "limited-risk",
+    "got_tier": "limited-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "near-miss",
+    "expected_article": "Article 50(2) and 50(4), page 82",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-14T06:45:56",
+    "model": "default"
+  },
+  "E32": {
+    "id": "E32",
+    "expected_tier": "prohibited",
+    "got_tier": "high-risk",
+    "tier_correct": false,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "clean",
+    "expected_article": "Article 5(1)(e), page 51",
+    "citation_article_match": false,
+    "citation_page_match": false,
+    "citations": [
+      "Recitals, page 25",
+      "Article 26, begins page 67"
+    ],
+    "ran_at": "2026-06-14T06:46:28",
+    "model": "default"
+  },
+  "E33": {
+    "id": "E33",
+    "expected_tier": "minimal-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "distractor",
+    "expected_article": "Annex III point 2, page 127 (ruled out)",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Article 5, page not applicable",
+      "Annex III, page not applicable",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-14T21:34:21",
+    "model": "default"
+  },
+  "E34": {
+    "id": "E34",
+    "expected_tier": "high-risk",
+    "got_tier": "high-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "boundary",
+    "expected_article": "Article 6(1) with Annex I (medical devices, Regulation (EU) 2017/745), page 53",
+    "citation_article_match": false,
+    "citation_page_match": false,
+    "citations": [
+      "Recitals, page 13",
+      "Recitals, page 23",
+      "Article 14, page 60"
+    ],
+    "ran_at": "2026-06-14T21:34:37",
+    "model": "default"
+  },
+  "E35": {
+    "id": "E35",
+    "expected_tier": "high-risk",
+    "got_tier": "limited-risk",
+    "tier_correct": false,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "near-miss",
+    "expected_article": "Annex III point 1(c), page 127 (Article 5(1)(f) considered; Article 50(3) transparency)",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-14T21:35:11",
+    "model": "default"
+  },
+  "E36": {
+    "id": "E36",
+    "expected_tier": "high-risk",
+    "got_tier": "high-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "clean",
+    "expected_article": "Annex III point 8(a), page 128 (also point 6(d), page 128)",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Annex III, point 8(a), page 127",
+      "Recitals, page 17"
+    ],
+    "ran_at": "2026-06-14T21:35:42",
+    "model": "default"
+  },
+  "E37": {
+    "id": "E37",
+    "expected_tier": "minimal-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "distractor",
+    "expected_article": "Article 50(2), page 82 (assistive/standard-processing exception)",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Article 50, page 82",
+      "Recitals, page 20",
+      "Recitals, page 33",
+      "Recitals, page 13",
+      "Recitals, page 30"
+    ],
+    "ran_at": "2026-06-14T21:36:17",
+    "model": "default"
+  },
+  "E38": {
+    "id": "E38",
+    "expected_tier": "high-risk",
+    "got_tier": "high-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "boundary",
+    "expected_article": "Annex III point 3(b), page 127",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Annex III, page 127"
+    ],
+    "ran_at": "2026-06-14T21:36:45",
+    "model": "default"
+  },
+  "E39": {
+    "id": "E39",
+    "expected_tier": "limited-risk",
+    "got_tier": "high-risk",
+    "tier_correct": false,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "near-miss",
+    "expected_article": "Article 50(3), page 82 (Annex III point 1(b) considered)",
+    "citation_article_match": true,
+    "citation_page_match": false,
+    "citations": [
+      "Annex III, point 6, page 127"
+    ],
+    "ran_at": "2026-06-14T21:37:17",
+    "model": "default"
+  },
+  "E40": {
+    "id": "E40",
+    "expected_tier": "minimal-risk",
+    "got_tier": "minimal-risk",
+    "tier_correct": true,
+    "confidence": "high",
+    "needs_human_review": false,
+    "difficulty": "clean",
+    "expected_article": "Article 50(2), page 82 (assistive/standard-processing exception)",
+    "citation_article_match": true,
+    "citation_page_match": true,
+    "citations": [
+      "Article 5, page not provided",
+      "Annex III, page not provided",
+      "Article 50, page 82"
+    ],
+    "ran_at": "2026-06-14T21:37:50",
+    "model": "default"
+  }
+}
