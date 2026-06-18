@@ -1,16 +1,22 @@
 """
-Aegis risk classifier, v3.
+Aegis risk classifier, v4.
 
-Changes from v2, each driven by the v1/v2 evaluation results:
-1. Citation convention: passages are presented with their provision name and
-   the page where the provision BEGINS; the model is instructed to cite that
-   start page. This matches the citation convention a reader needs (the page
-   to flip to) and the convention used in the evaluation ground truth.
-2. Tier decision procedure: explicit rules targeting the measured error
-   pattern (limited-risk over-assignment; missed exceptions).
-3. Review-flag floor in code: needs_human_review is forced True whenever the
-   model's confidence is not "high", regardless of what the model set.
-   This addresses the measured underfire (fired on 1 of 10 boundary cases).
+Changes from v3, each driven by the v3 evaluation results:
+1. Limited-risk step rebalanced. v3 told the model not to use limited-risk as a
+   compromise; it over-corrected and pushed genuine Article 50 cases (chatbots,
+   deepfakes) into minimal-risk and high-risk, dropping limited-risk recall to
+   2 of 7. v4 states the Article 50 triggers as positive signals: if a system
+   is a chatbot or generates synthetic content and is not caught earlier, it IS
+   limited-risk. The higher tier still wins when high-risk also applies.
+2. Review flag from structural signals. v3 showed the model rates almost every
+   case "high" confidence, so a confidence-only floor rarely fired. v4 also
+   fires the flag when the model's own reasoning text names an exception, a
+   boundary, or a contested or interpretive judgement. Computed in code, not
+   dependent on the model setting the flag.
+
+Kept from v3: Annex-aware indexing, the provision-start-page citation
+convention, the Article 5 gates and exceptions, the Annex III 5(b) fraud
+carve-out. Those improved citation accuracy and are unchanged.
 
 Run from the project root for a CLI demonstration:
     python src/aegis/classify.py
@@ -79,9 +85,14 @@ STEP 2, high-risk. Check Annex III use cases (biometrics, critical infrastructur
 - Annex III point 5(b) creditworthiness EXCLUDES AI used to detect financial fraud. Fraud detection is not high-risk under 5(b).
 - A human reviewing or having override does NOT remove high-risk status when the system materially influences the decision (evaluating candidates, grading students, proctoring exams).
 
-STEP 3, limited-risk (Article 50). Assign ONLY when the system itself is one of: a system interacting directly with people (chatbot), generating synthetic content or deep fakes, or emotion recognition / biometric categorisation outside prohibited contexts. Notes:
-- AI that merely assists standard editing (spell-check, grammar, transcription) or processes the user's own content does NOT trigger Article 50; that is minimal-risk.
-- Do NOT assign limited-risk as a compromise when unsure between minimal-risk and high-risk. Limited-risk requires an actual Article 50 trigger.
+STEP 3, limited-risk (Article 50 transparency). Assign limited-risk when the system has a transparency trigger under Article 50 but is NOT high-risk or prohibited. The triggers, assign limited-risk if ANY apply:
+- It interacts directly with people (a chatbot, a conversational agent, a virtual assistant). A customer-facing chatbot is the textbook limited-risk case.
+- It generates or manipulates synthetic audio, image, video, or text content (including deep fakes and AI-written content shown to people).
+- It is an emotion-recognition or biometric-categorisation system used outside the prohibited contexts of Article 5.
+Apply these notes:
+- These triggers are POSITIVE signals. If a system is a chatbot or generates synthetic content and is not caught by Step 1 or Step 2, it IS limited-risk. Do not push it down to minimal-risk for lacking some further condition; the trigger itself is sufficient.
+- A system can be high-risk under Step 2 AND owe Article 50 transparency. When both apply, the tier is high-risk (the higher tier wins) and the transparency duty is noted in reasoning, not used to downgrade.
+- The only things that defeat a Step 3 trigger: the system merely assists standard editing (spell-check, grammar, transcription) or processes only the user's own content for that user. Those are minimal-risk.
 
 STEP 4, otherwise "minimal-risk". Most AI systems land here. Internal tools, logistics, forecasting, quality control, and recommendation systems with no Annex III use are minimal-risk.
 
@@ -228,16 +239,32 @@ def _parse_response(raw: str) -> Classification:
     if confidence not in ("high", "medium", "low"):
         confidence = "low"
 
-    # Review-flag floor (v3): the v1/v2 evaluations measured the model's own
-    # flag firing on only ~10% of boundary cases. The flag now also fires
-    # whenever confidence is below "high". Deterministic, not model-dependent.
+    reasoning = data.get("reasoning", "")
     model_flag = bool(data.get("needs_human_review", True))
-    needs_review = model_flag or (confidence != "high")
+
+    # Review-flag floor (v4). The v3 evaluation showed the model rates almost
+    # every case "high" confidence, including boundary cases it gets wrong, so a
+    # confidence-only floor rarely fired. v4 adds STRUCTURAL signals computed
+    # from the reasoning text: if the model's own explanation mentions an
+    # exception, a tier boundary, a borderline judgement, or a dependence on
+    # interpretation, the case warrants human review regardless of the
+    # confidence label. These are deterministic and do not rely on the model
+    # choosing to set the flag itself.
+    review_signals = (
+        "borderline", "boundary", "near the", "close call", "could be",
+        "depends on", "exception", "arguabl", "ambiguous", "unclear",
+        "however", "on the other hand", "either", "contested", "provisional",
+        "may also", "might also", "not clear", "uncertain",
+    )
+    text = reasoning.lower()
+    structural_flag = any(sig in text for sig in review_signals)
+
+    needs_review = model_flag or (confidence != "high") or structural_flag
 
     return Classification(
         tier=tier,
         confidence=confidence,
-        reasoning=data.get("reasoning", ""),
+        reasoning=reasoning,
         citations=data.get("citations", []),
         needs_human_review=needs_review,
         raw_response=raw,
