@@ -88,10 +88,10 @@ def get_qa():
     retrieve chunks for the question, then ask the model with those chunks.
     The client and index are loaded a single time and closed over here so the
     wrapper only does per-question work (retrieve + ask)."""
-    from src.aegis.grounded_qa import Groq, load_index, retrieve_for_question, ask, TOP_K
+    from src.aegis.grounded_qa import Groq, retrieve_for_question, ask, TOP_K
 
     client = Groq()
-    index = load_index()
+    index = get_index()
 
     def answer_question(question: str) -> str:
         nodes = retrieve_for_question(index, question, top_k=TOP_K)
