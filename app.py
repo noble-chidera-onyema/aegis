@@ -669,13 +669,14 @@ def screen_inventory() -> None:
         if st.session_state.classification is not None:
             st.caption("Classified. See the Classification tab.")
 
-    if classify_clicked:
+    if classify_clicked and not st.session_state.get("classify_running", False):
         if not description.strip():
             st.warning("Please describe the system before classifying.")
             return
         st.session_state.system_description = description.strip()
         st.session_state.report = None  # invalidate any prior report
 
+        st.session_state.classify_running = True
         classify_system = get_classifier()
         with st.spinner("Reading the Act and classifying the system..."):
             skeleton_pause(0.5)
@@ -694,6 +695,7 @@ def screen_inventory() -> None:
             st.session_state.review_state = "unreviewed"
             st.session_state.report = None
             st.success("Classification complete. Open the Classification tab to see the result.")
+        st.session_state.classify_running = False
 
     if st.session_state.last_error:
         show_error_fallback(st.session_state.last_error, key="inventory")
@@ -813,7 +815,8 @@ def screen_classification() -> None:
 
     st.divider()
     st.write("Generate the full obligations report for this system:")
-    if st.button("View obligations"):
+    if st.button("View obligations") and not st.session_state.get("obligations_running", False):
+        st.session_state.obligations_running = True
         generate_report = get_report_generator()
         with st.spinner("Mapping obligations and retrieving source passages..."):
             skeleton_pause(0.5)
@@ -831,6 +834,7 @@ def screen_classification() -> None:
             st.session_state.report = report
             st.session_state.last_error = None
             st.success("Obligations report ready. Open the Obligations tab.")
+        st.session_state.obligations_running = False
 
     if st.session_state.last_error:
         show_error_fallback(st.session_state.last_error, key="classification")
