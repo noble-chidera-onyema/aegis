@@ -283,3 +283,62 @@ The Classification screen showing the standing caution floor on every result, th
 
 The Inventory screen with both expanders: "How this works" and the dedicated privacy section stating what Aegis and Groq do with the user's input.
 
+## Week 9 (21 to 22 June 2026)
+
+Renamed the project and deployed it live.
+
+### The rename: Aegis to Ugegbe
+
+Aegis was always a working title. It is also one of the most contested names in software trademarks. A clearance search confirmed it: crowded across the classes that matter for this tool (Nice class 9, software, and class 42, SaaS and technical services). Around twenty candidate names were checked against the UK IPO register, the EUIPO register, and TMview. Most failed on an exact or near-identical mark in class 9 or 42. A few examples of the kills: Asseva collided with a registered mark one letter away; Osita was already a registered EU trade mark in 9 and 42; Dhera sat one letter from an existing AI compliance tool in the same industry.
+
+Ugegbe cleared every register checked. UK IPO returned no marks. EUIPO returned zero. TMview returned no rows. The domains were open.
+
+Ugegbe is Igbo for "mirror". The tool reflects an AI system back to its owner so they can see where it stands under the law. The name carries the function, and it is mine, not borrowed from the crowded end of the register.
+
+No trade mark was registered. That is premature for a portfolio project. Clearance plus unregistered use is enough while building. A UK IPO self-filing is the cheap route later if it is ever warranted.
+
+### What changed in the code, and what deliberately did not
+
+Every user-visible "Aegis" became "Ugegbe": the page title, the wordmark, the tagline, the README, the GitHub description. New tagline: "See your AI system the way the EU AI Act sees it."
+
+The internal package name was left as `src/aegis`. The imports, the CSS class prefixes, the logger name, the keyframe name all still say `aegis`. None of it is user-visible. Renaming it would break every import for no benefit. The product is Ugegbe; the package is a private implementation detail.
+
+The GitHub repository was renamed in place from `aegis` to `ugegbe`, keeping the full commit history. The remote URL was updated locally.
+
+### Deployment: Streamlit Community Cloud
+
+The app is live at https://ugegbe.streamlit.app.
+
+Getting there meant fixing a chain of problems, each one uncovering the next. Worth recording, because the fixes are the interesting part.
+
+The index is gitignored. `chroma_db/` is excluded from the repo because it is a regenerated build artefact. Locally that is fine, the index is built on disk by `build_index.py`. On the cloud the directory does not exist, so every screen that opened the Chroma collection threw `NotFoundError: Collection ai_act_v1 does not exist`. The source PDF is committed, so the fix was to build the index in memory from the PDF when the on-disk collection is absent, using `chromadb.EphemeralClient()`. One `load_index` now tries the on-disk collection first and falls back to an in-memory build. Local and cloud share one code path.
+
+The in-memory build collided with itself. The classify screen built one in-memory index. The obligations screen called `load_index` again and tried to create a second collection with the same name, which Chroma refuses: `InternalError: Collection ai_act_v1 already exists`. The fix was the design the code had always intended: build the index once and share it. A single `@st.cache_resource` function, `get_index()`, builds the index one time per running process. Both the classify call and the obligations call now receive that one cached index. `create_collection` was also changed to `get_or_create_collection` as a guard.
+
+The Ask screen had its own index loader. The grounded question-and-answer module carried a separate `load_index` that was never touched by the fix above, so Ask still crashed with the original `NotFoundError`. The fix pointed `get_qa()` at the same shared `get_index()`. All four screens now use one cached, fallback-aware index. The earlier concern about two separate in-memory builds wasting memory is gone as a side effect.
+
+Streamlit Cloud caches imported modules across a code pull. A plain "pull changes" updated the files on disk but kept the old module in memory, so the fix did not take effect until a full hard reboot of the app forced a clean reimport. This cost a few confusing cycles before it was understood. A hard reboot, not a pull, is the rule after a logic change.
+
+One environment note. Streamlit Cloud built on Python 3.14.6. The build succeeded. `torchvision` is absent, which floods the logs with harmless "No module named 'torchvision'" warnings. They are noise and were ignored.
+
+### State at end of Week 9
+
+All four screens work on the live cloud, verified end to end:
+
+Classify returns a tier with reasoning and citations. The CV-screener test case returns high-risk, citing Annex III page 127 and Article 13 page 59.
+
+Obligations generates the full report for the assigned tier, ten Articles for high-risk, each with a source page and a per-system note. The note prompt was constrained this week to stay consistent with the assigned tier, after an earlier thin input ("a business that sells toys used by children") produced a minimal-risk classification with a note that loosely speculated "may be high-risk". That was a note-quality bug in `obligations.py`, not a classifier change, so it does not touch the Week 8 evaluation.
+
+Ask answers grounded questions with page citations and declines when the Act does not cover the question. Tested live: the real-time biometric identification exceptions question returned the correct carve-outs with pages; a deliberate GDPR question was correctly declined as outside the Act's text.
+
+Honest limitations carried forward. Citation page precision is still weaker than provision precision; one live classification showed "Annex III, page not specified" when the governing chunk was not in the top-8. The Ask answers cite "Passage N" internally, which the classify prompt forbids but the grounded-QA prompt does not yet; a prompt fix for a later pass. The cloud rebuilds the in-memory index on every cold start, which is slow on the free tier; committing the pre-built index is the future optimisation.
+
+![Ugegbe live: classification result](./screenshots/ugegbe-live-classification-2026-06-22.jpg)
+
+![Ugegbe live: obligations report](./screenshots/ugegbe-live-obligations-2026-06-22.jpg)
+
+![Ugegbe live: grounded Q&A](./screenshots/ugegbe-live-ask-2026-06-22.jpg)
+
+The screenshots are from the live app at ugegbe.streamlit.app, dated 22 June 2026. Earlier Aegis-named screenshots in this log are kept as the real history; the project was Aegis when they were taken.
+
+Commits this week: `f663398` (rename to Ugegbe), `e150408` (obligations cloud access plus tier-consistent note), `935a623` (build index once via cached get_index), `f030fdb` (Ask screen uses the shared index).
