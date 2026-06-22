@@ -68,3 +68,6 @@ htmlcov/
 **/raw_screenshots/
 # Throwaway PowerShell edit scripts
 *.ps1
+
+# Throwaway PowerShell edit scripts
+*.ps1
