@@ -283,6 +283,70 @@ The Classification screen showing the standing caution floor on every result, th
 
 The Inventory screen with both expanders: "How this works" and the dedicated privacy section stating what Aegis and Groq do with the user's input.
 
+## Week 8 (9 to 20 June 2026): Evaluation harness, four measured iterations, held-out check
+
+This is the week the project stopped running on "it looks right" and started running on numbers. Earlier weeks built the classifier, the obligations report, and the Q&A. None of that was measured against a fixed answer key. Week 8 built the harness, wrote a hard test set, and ran the classifier against it four times, changing one thing at a time and recording what each change did.
+
+### The test set, and why the number holds up
+
+40 hand-labelled cases in `tests/eval_set.json`. Written to be hard on purpose: hidden tier boundaries, distractors, systems that read like one tier but sit in another. 10 clean, 10 boundary, 10 near-miss, 10 distractor, spread across the four tiers.
+
+The ground truth was derived by hand from the Act, reading the relevant Article or Annex point for each case. The model did not write its own answer key. The classifier runs on Llama 3.3 70B; if that same model also produced the labels, the eval would be scoring the system against itself and any agreement would be meaningless. Labelling each case off the Act text keeps the answer key independent of the thing being graded.
+
+At 40 cases the margin of error on the overall figure is around 13 points either way. So a 70% reading means "somewhere in the low-to-mid 70s", not a precise score. It is a signal on a hard set, not a benchmark. Only two cases are prohibited, too few to read as a rate, so those are spot checks throughout.
+
+### The four versions
+
+| Metric | v1 | v2 | v3 | v4 |
+|---|---|---|---|---|
+| Tier accuracy | 77.5% | 75.0% | 70.0% | 70.0% |
+| Citation, right Article/Annex | 80.0% | 72.5% | 85.0% | 72.5% |
+| Citation, Article + page | 36.8% | 42.1% | 44.7% | 47.4% |
+| Limited-risk recall | over-assigned | n/a | 2/7 | 5/7 |
+| Review flag on boundary cases | 10% | 10% | 0% | 10% |
+
+No version is best on every metric. v1 has the best tier accuracy. v3 has the best Article-level citation. v4 has the best page-level citation and the most balanced limited-risk recall. Each change bought a gain on one metric and gave something back on another. That tradeoff is the honest result of the week, not a clean upward line.
+
+### What each version changed
+
+v1, baseline. The classifier as first built. 77.5% on the hard set. The reference point.
+
+v2, page-metadata fix. The v1 run showed citations reporting "page 1" for text plainly not on page 1. The ingestion code had hardcoded recital chunks to page 1 and given every sub-chunk of a long Article the Article's start page. Fixed to compute each chunk's real page. Article+page citation rose 36.8 to 42.1. Tier accuracy unchanged within noise. The fix was real but modest, because most of the page mismatch was never the page-1 bug. It was a labelling-convention difference on Annex III, which this fix did not touch.
+
+v3, Annex-aware indexing, citation convention, strict tier procedure. Annexes became first-class chunks with their own start pages (Annex III at page 127), the prompt was told to cite the page a provision begins on, and a strict four-step tier procedure was added to stop the v1 habit of over-assigning limited-risk. Article-level citation reached its best (85.0%). Tiering fell to its worst (70.0%). The strict procedure over-corrected: it told the model not to use limited-risk as a compromise, and limited-risk recall dropped to 2 of 7. v1 over-assigned that tier; v3 under-assigned it. Same tier, opposite failure, on balance worse.
+
+v4, rebalanced limited-risk, structural review flag. The limited-risk step was rewritten to state the Article 50 triggers as positive signals rather than discouraging the tier. The review flag was changed to fire on structural signals in the reasoning (mentions of exceptions, boundaries, hedging) instead of only the model's self-reported confidence. Limited-risk recall recovered to 5 of 7, the main goal. Article+page citation reached its best (47.4%). Tier accuracy stayed at 70.0%, because the rebalanced prompt now slightly over-reaches into limited-risk from minimal-risk. Article-level citation dropped to 72.5% as the prompt shifted which provisions the model emphasised.
+
+### The review-flag finding, which held across all four versions
+
+The human-review flag underfires, and the cause is not the flag logic. A dump of the stored confidence values showed the model rating almost every case "high" confidence, including the boundary cases it then got wrong. A flag that waits for the model to report doubt almost never trips, because the model rarely reports doubt. This is a confidence-calibration problem, not a wiring problem. No version fixed it. It is why the app puts a standing caution on every result regardless of the flag, the automation-bias floor built in Week 7. That floor does not wait for the flag.
+
+### Why iteration stopped at v4
+
+Four versions show one pattern: each prompt-and-index change fixes one failure and introduces another, and tier accuracy sits in a band around the low-to-mid 70s. That is diminishing returns on prompt and index tuning. There is also an integrity reason to stop. The same 40 cases had guided four rounds of change, so by v4 they were a development signal, not an unseen test. Each further tweak against them would make the 40-case number a weaker measure of real performance, because the prompt starts fitting the test.
+
+v4 was chosen for deployment. For a decision-support tool the user reads the cited passage to confirm the answer, so citation quality matters alongside the tier, and v4 has the best page-level citation and a balanced limited-risk recall. v1's higher raw tier accuracy is noted, and the gap is inside the set's 13-point margin, so the two are not clearly distinguishable on tiering alone.
+
+### The held-out check (20 June 2026)
+
+The thing that makes the 70% honest. 10 fresh cases in `tests/holdout_set.json`, none reused from the 40, labelled the same independent way, run once on v4 with no iterating and no re-rolls.
+
+| Metric | v4 on the 40 | v4 on the 10 held-out |
+|---|---|---|
+| Tier accuracy | 70.0% | 70.0% |
+| Citation, right Article/Annex | 72.5% | 80.0% |
+| Citation, Article + page | 47.4% | 85.7% |
+
+Tier accuracy on unseen cases is identical to the development set: 70%. If the tuning had been fitting the 40 rather than learning the task, the held-out number would have dropped. It did not. Citation accuracy held or improved, so the Annex-aware indexing and the start-page convention generalise too (the 85.7% page figure is 6 of 7, a small denominator, read as "held up" not as a precise gain).
+
+The three held-out misses were all the same error: a minimal-risk case called high-risk, where the correct answer depends on an exclusion a surface reading misses. A debt-collection system that pattern-matches to creditworthiness under Annex III 5(b) but is excluded, because per recital 58 that point concerns access to financial resources, not recovery on an existing debt. A forklift safety component that pattern-matches to "safety component of machinery" but is self-assessed under the current Machinery Directive, so the Article 6 third-party conformity condition is not met today. v4 applied the surface pattern and missed the carve-out both times.
+
+The characteristic error is over-triggering high-risk on systems that resemble an Annex III domain but are excluded on a closer reading. For a compliance tool that is the safer direction to err: it warns a user to look harder rather than wrongly reassuring them. It is still a real limitation and is recorded as one.
+
+### What this week settles
+
+The 70% figure is a fair statement of v4's real performance on hard cases, not an artefact of tuning. The evaluation phase is closed. Further gains need a different kind of change, retrieval quality so the governing provision is actually returned, confidence calibration so the review flag has an honest signal, possibly a stronger model, not more prompt tuning against a fixed set. The full per-version detail lives in `docs/EVAL_RESULTS_v1.md`, `docs/EVAL_RESULTS_v2_v3.md`, `docs/EVAL_RESULTS_v4.md`, and `docs/EVAL_RESULTS_holdout.md`.
+
 ## Week 9 (21 to 22 June 2026)
 
 Renamed the project and deployed it live.
